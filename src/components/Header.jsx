@@ -27,7 +27,10 @@ export default function Header() {
     <header className="header">
       <div className="header-inner">
         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          <Link to="/" className="logo">NeuralGym</Link>
+          <Link to="/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/logo.png" alt="NeuralGym Logo" style={{ height: '36px', width: '36px', borderRadius: '8px' }} />
+            <span className="hide-on-mobile">NeuralGym</span>
+          </Link>
           <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }} className="desktop-nav">
             {navLinks.map(link => (
               <Link
