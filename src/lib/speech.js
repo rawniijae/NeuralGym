@@ -15,11 +15,29 @@ export function startSpeechRecognition(onResult, onError, onEnd) {
   let currentTranscript = '';
 
   recognition.onresult = (event) => {
-    let text = '';
+    if (event.results.length === 0) return;
+
+    let parts = [];
     for (let i = 0; i < event.results.length; ++i) {
-      text += event.results[i][0].transcript;
+      parts.push(event.results[i][0].transcript.trim());
     }
-    currentTranscript = text;
+
+    let finalString = parts[0];
+    for (let i = 1; i < parts.length; i++) {
+      let prev = parts[i-1];
+      let curr = parts[i];
+      
+      // Android Web Speech API bug: Sometimes new result chunks contain the ENTIRE previous chunk.
+      // If the new chunk starts with the previous chunk, it's an accumulation bug.
+      // We replace the previous chunk instead of appending it to prevent exponential duplication.
+      if (prev.length > 0 && curr.toLowerCase().startsWith(prev.toLowerCase())) {
+        finalString = finalString.substring(0, finalString.length - prev.length) + curr;
+      } else {
+        finalString += ' ' + curr;
+      }
+    }
+
+    currentTranscript = finalString;
     onResult(currentTranscript.trim());
   };
 
