@@ -9,6 +9,39 @@ const MODELS = [
   "nousresearch/hermes-3-llama-3.1-405b:free"
 ];
 
+export async function generateParagraph() {
+  if (!OPENROUTER_API_KEY) throw new Error("API key missing");
+
+  const prompt = "Generate a short, completely unique 2-sentence paragraph designed to test English pronunciation. Make it interesting (like a random fact, a tiny story, or a tongue twister). Do NOT wrap it in quotes, just return the raw text.";
+
+  for (const model of MODELS) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.href,
+          "X-Title": "NeuralGym"
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content.trim().replace(/^"|"$/g, '');
+      }
+    } catch (err) {
+      console.warn(`Model ${model} failed:`, err.message);
+    }
+  }
+  // Fallback if all AI models fail
+  return "The quick brown fox jumps over the lazy dog. This is a fallback paragraph because the AI servers are currently busy.";
+}
+
 export async function analyzePronunciation(targetText, spokenText) {
   if (!OPENROUTER_API_KEY) {
     throw new Error("OpenRouter API key is missing. Add it to .env.local!");
@@ -27,7 +60,7 @@ SPOKEN TEXT: "${spokenText}"
 Return your analysis strictly as a JSON object with this exact structure, and nothing else (no markdown formatting, no code blocks, just raw JSON):
 {
   "accuracy": number, // 0 to 100
-  "feedback": "A short, encouraging 1-sentence summary of how they did",
+  "feedback": "A detailed 2-3 sentence feedback explaining EXACTLY which sounds/words they struggled with and how to physically move their mouth/tongue to fix it.",
   "guessedAccent": "Indian / British / American / Chinese / etc.",
   "mispronouncedWords": ["word1", "word2"] // Array of words they got wrong from the target text. Empty array if perfect.
 }`;

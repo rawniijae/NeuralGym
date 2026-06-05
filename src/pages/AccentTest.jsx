@@ -2,18 +2,10 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useScores } from '../hooks/useScores';
 import { startSpeechRecognition } from '../lib/speech';
-import { analyzePronunciation } from '../lib/ai';
-
-const paragraphs = [
-  "The quick brown fox jumps over the lazy dog. She sells seashells by the seashore. Peter Piper picked a peck of pickled peppers.",
-  "How much wood would a woodchuck chuck if a woodchuck could chuck wood? A proper copper coffee pot is a proper copper coffee pot.",
-  "Red lorry, yellow lorry. Unique New York, unique New York, you know you need unique New York. The thirty-three thieves thought that they thrilled the throne throughout Thursday.",
-  "Around the rugged rocks the ragged rascal ran. Betty Botter bought some butter but she said the butter's bitter. If I buy a bit of better butter it will make my batter better.",
-  "Six sleek swans swam swiftly southwards. Fred fed Ted bread and Ted fed Fred bread. A big black bug bit a big black bear and made the big black bear bleed blood.",
-];
+import { analyzePronunciation, generateParagraph } from '../lib/ai';
 
 export default function AccentTest() {
-  const [phase, setPhase] = useState('ready'); // ready, recording, processing, result
+  const [phase, setPhase] = useState('generating'); // generating, ready, recording, processing, result
   const [paragraph, setParagraph] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -28,10 +20,17 @@ export default function AccentTest() {
   const animFrameRef = useRef(null);
   const { updateScore } = useScores();
 
-  const selectParagraph = useCallback(() => {
-    const p = paragraphs[Math.floor(Math.random() * paragraphs.length)];
-    setParagraph(p);
-    return p;
+  const fetchNewParagraph = useCallback(async () => {
+    setPhase('generating');
+    setParagraph('');
+    try {
+      const p = await generateParagraph();
+      setParagraph(p);
+      setPhase('ready');
+    } catch (err) {
+      setError("Failed to generate paragraph. Please try again.");
+      setPhase('ready');
+    }
   }, []);
 
   const animateWaveform = useCallback(() => {
@@ -108,17 +107,16 @@ export default function AccentTest() {
   }, [stopWaveform]);
 
   const startTest = useCallback(() => {
-    selectParagraph();
-    setPhase('ready');
+    fetchNewParagraph();
     setTranscript('');
     setAccuracy(0);
     setError('');
-  }, [selectParagraph]);
+  }, [fetchNewParagraph]);
 
   useEffect(() => {
-    selectParagraph();
+    fetchNewParagraph();
     return () => stopWaveform();
-  }, [selectParagraph, stopWaveform]);
+  }, [fetchNewParagraph, stopWaveform]);
 
   const getAccuracyColor = () => {
     if (accuracy >= 80) return 'var(--success)';
@@ -160,6 +158,15 @@ export default function AccentTest() {
             fontSize: 14
           }}>
             {error}
+          </div>
+        )}
+
+        {/* Generating Paragraph */}
+        {phase === 'generating' && (
+          <div className="glass-card-static animate-in" style={{ padding: 48, textAlign: 'center' }}>
+            <div style={{ width: 48, height: 48, margin: '0 auto', border: '3px solid var(--outline-variant)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <p style={{ marginTop: 16, color: 'var(--on-surface-variant)' }}>AI is writing a unique paragraph for you...</p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         )}
 
