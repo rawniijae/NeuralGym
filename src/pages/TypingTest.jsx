@@ -22,6 +22,7 @@ const wordPools = {
 
 export default function TypingTest() {
   const [difficulty, setDifficulty] = useState('easy');
+  const [device, setDevice] = useState('desktop'); // desktop, phone
   const [phase, setPhase] = useState('ready'); // ready, typing, done
   const [text, setText] = useState('');
   const [typed, setTyped] = useState('');
@@ -36,7 +37,14 @@ export default function TypingTest() {
 
   const startTest = useCallback(() => {
     const pool = wordPools[difficulty];
-    const randomText = pool[Math.floor(Math.random() * pool.length)];
+    let randomText = pool[Math.floor(Math.random() * pool.length)];
+    
+    // Apply device-specific formatting
+    randomText = randomText.toLowerCase();
+    if (device === 'phone') {
+      randomText = randomText.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
+    }
+    
     setText(randomText);
     setTyped('');
     setStartTime(null);
@@ -46,7 +54,7 @@ export default function TypingTest() {
     setErrors(0);
     setPhase('typing');
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [difficulty]);
+  }, [difficulty, device]);
 
   const handleInput = useCallback((e) => {
     const val = e.target.value;
@@ -143,6 +151,20 @@ export default function TypingTest() {
           <p>Test your typing speed with real-time WPM tracking and error highlighting.</p>
         </div>
 
+        {/* Device Selector */}
+        <div className="difficulty-selector" style={{ marginBottom: 16 }}>
+          {['desktop', 'phone'].map(d => (
+            <button
+              key={d}
+              className={`difficulty-btn ${device === d ? 'active' : ''}`}
+              onClick={() => { setDevice(d); if (phase !== 'typing') setPhase('ready'); }}
+              style={{ padding: '8px 24px' }}
+            >
+              {d.charAt(0).toUpperCase() + d.slice(1)} Mode
+            </button>
+          ))}
+        </div>
+
         {/* Difficulty Selector */}
         <div className="difficulty-selector">
           {['easy', 'medium', 'hard'].map(d => (
@@ -160,7 +182,7 @@ export default function TypingTest() {
           <div className="glass-card-static game-area animate-in">
             <div className="text-headline-lg" style={{ marginBottom: 8 }}>Ready to Type?</div>
             <p style={{ color: 'var(--on-surface-variant)', marginBottom: 8 }}>
-              Difficulty: <strong style={{ color: 'var(--primary)' }}>{difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}</strong>
+              Mode: <strong style={{ color: 'var(--primary)' }}>{device.charAt(0).toUpperCase() + device.slice(1)}</strong> &bull; Difficulty: <strong style={{ color: 'var(--primary)' }}>{difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}</strong>
             </p>
             {scores.typing?.wpm > 0 && <p style={{ color: 'var(--primary)', fontSize: 14, marginBottom: 24 }}>Personal Best: {scores.typing.wpm} WPM</p>}
             <button className="btn-primary" onClick={startTest}>Start Typing Test</button>
