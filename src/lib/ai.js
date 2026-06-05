@@ -19,6 +19,8 @@ You are an expert pronunciation and speech coach. I am going to give you a TARGE
 
 Your job is to compare them and calculate an accuracy score (0-100) and identify which words they mispronounced, skipped, or mumbled.
 
+Additionally, play detective: Based on the specific phonetic errors the speech-to-text engine made (e.g., confusing L and R, dropping Rs, confusing V and W), make a highly educated guess on what regional accent the user might have (e.g., Indian, British, East Asian, American, etc.). If they spoke perfectly, just say "Neutral/Native".
+
 TARGET TEXT: "${targetText}"
 SPOKEN TEXT: "${spokenText}"
 
@@ -26,6 +28,7 @@ Return your analysis strictly as a JSON object with this exact structure, and no
 {
   "accuracy": number, // 0 to 100
   "feedback": "A short, encouraging 1-sentence summary of how they did",
+  "guessedAccent": "Indian / British / American / Chinese / etc.",
   "mispronouncedWords": ["word1", "word2"] // Array of words they got wrong from the target text. Empty array if perfect.
 }`;
 

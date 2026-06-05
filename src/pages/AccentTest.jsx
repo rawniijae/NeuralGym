@@ -19,6 +19,7 @@ export default function AccentTest() {
   const [transcript, setTranscript] = useState('');
   const [accuracy, setAccuracy] = useState(0);
   const [aiFeedback, setAiFeedback] = useState('');
+  const [detectedAccent, setDetectedAccent] = useState('');
   const [mispronouncedWords, setMispronouncedWords] = useState([]);
   const [waveformBars, setWaveformBars] = useState(Array(20).fill(8));
   const [error, setError] = useState('');
@@ -52,6 +53,7 @@ export default function AccentTest() {
     setError('');
     setTranscript('');
     setAiFeedback('');
+    setDetectedAccent('');
     setMispronouncedWords([]);
 
     const recognition = startSpeechRecognition(
@@ -76,6 +78,7 @@ export default function AccentTest() {
             const aiResult = await analyzePronunciation(paragraph, finalTranscript);
             setAccuracy(aiResult.accuracy);
             setAiFeedback(aiResult.feedback);
+            setDetectedAccent(aiResult.guessedAccent || 'Unknown');
             setMispronouncedWords(aiResult.mispronouncedWords || []);
             updateScore('accent', { accuracy: Math.max(aiResult.accuracy, 0) });
             setPhase('result');
@@ -273,6 +276,18 @@ export default function AccentTest() {
               }}>
                 "{aiFeedback}"
               </div>
+
+              {detectedAccent && (
+                <div style={{ marginBottom: 24, textAlign: 'left' }}>
+                  <div className="text-label-caps" style={{ color: 'var(--primary)', marginBottom: 4 }}>DETECTED ACCENT</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--on-surface)' }}>
+                    {detectedAccent}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--on-surface-variant)', marginTop: 4, fontStyle: 'italic' }}>
+                    (This might not be 100% correct since we are guessing based on text using free AI models)
+                  </div>
+                </div>
+              )}
 
               {mispronouncedWords.length > 0 && (
                 <div>
