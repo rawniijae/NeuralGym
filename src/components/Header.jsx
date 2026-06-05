@@ -47,7 +47,7 @@ export default function Header() {
               psychology
             </span>
             <span className="text-brain-score" style={{ color: 'var(--primary)' }}>
-              Brain Score: {brainScore}
+              <span className="hide-on-mobile">Brain Score: </span>{brainScore}
             </span>
           </div>
           

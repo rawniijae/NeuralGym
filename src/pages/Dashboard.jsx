@@ -180,12 +180,12 @@ export default function Dashboard() {
         borderTop: '1px solid rgba(73, 68, 84, 0.1)',
         marginTop: 64
       }}>
-        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div className="container footer-inner">
           <div>
             <div className="logo" style={{ fontSize: 22, marginBottom: 8 }}>NeuralGym</div>
             <div className="text-label-caps" style={{ color: 'var(--on-surface-variant)' }}>© 2024 NeuralGym Cognitive Systems</div>
           </div>
-          <div style={{ display: 'flex', gap: 32 }}>
+          <div className="footer-links">
             <span className="text-label-caps" style={{ color: 'rgba(203, 195, 215, 0.7)', cursor: 'pointer' }}>Privacy Policy</span>
             <span className="text-label-caps" style={{ color: 'rgba(203, 195, 215, 0.7)', cursor: 'pointer' }}>Terms of Service</span>
           </div>
