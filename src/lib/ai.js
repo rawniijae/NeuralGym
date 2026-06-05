@@ -1,5 +1,5 @@
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-const MODEL = "meta-llama/llama-3.1-8b-instruct:free";
+const MODEL = "google/gemma-2-9b-it:free";
 
 export async function analyzePronunciation(targetText, spokenText) {
   if (!OPENROUTER_API_KEY) {
@@ -26,7 +26,9 @@ Return your analysis strictly as a JSON object with this exact structure, and no
       method: "POST",
       headers: {
         "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "HTTP-Referer": window.location.href,
+        "X-Title": "NeuralGym"
       },
       body: JSON.stringify({
         model: MODEL,
@@ -35,7 +37,8 @@ Return your analysis strictly as a JSON object with this exact structure, and no
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      const errText = await response.text();
+      throw new Error(`API Error: ${response.status} - ${errText}`);
     }
 
     const data = await response.json();
@@ -46,9 +49,13 @@ Return your analysis strictly as a JSON object with this exact structure, and no
     if (resultText.startsWith('```')) resultText = resultText.slice(3);
     if (resultText.endsWith('```')) resultText = resultText.slice(0, -3);
 
-    return JSON.parse(resultText.trim());
+    try {
+      return JSON.parse(resultText.trim());
+    } catch (parseError) {
+      throw new Error(`AI returned invalid format: ${resultText}`);
+    }
   } catch (error) {
     console.error("AI Analysis Failed:", error);
-    throw new Error("Failed to analyze speech. Ensure your API key is valid.");
+    throw new Error(`Failed to analyze speech: ${error.message}`);
   }
 }
