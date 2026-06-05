@@ -199,9 +199,9 @@ export default function ReactionTest() {
               </p>
 
               {/* Individual rounds */}
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${TOTAL_ROUNDS}, 1fr)`, gap: 8, marginBottom: 32 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 32 }}>
                 {times.map((t, i) => (
-                  <div key={i} className="typing-stat-card">
+                  <div key={i} className="typing-stat-card" style={{ flex: '1 1 60px', maxWidth: '90px' }}>
                     <div className="value" style={{ fontSize: 18, color: getBenchmark(t).color }}>{t}ms</div>
                     <div className="label">R{i + 1}</div>
                   </div>
