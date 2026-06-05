@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     if (!auth) return;
-    localStorage.removeItem('neuralgym_scores');
+    sessionStorage.removeItem('neuralgym_scores');
     window.dispatchEvent(new Event('scoresUpdated'));
     return signOut(auth);
   };

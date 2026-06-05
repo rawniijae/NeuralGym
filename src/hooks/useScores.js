@@ -15,7 +15,7 @@ const defaultScores = {
 
 function getStoredScores() {
   try {
-    const stored = localStorage.getItem(SCORE_KEY);
+    const stored = sessionStorage.getItem(SCORE_KEY);
     if (stored) {
       return { ...defaultScores, ...JSON.parse(stored) };
     }
@@ -24,7 +24,7 @@ function getStoredScores() {
 }
 
 function saveScores(scores) {
-  localStorage.setItem(SCORE_KEY, JSON.stringify(scores));
+  sessionStorage.setItem(SCORE_KEY, JSON.stringify(scores));
 }
 
 export function useScores() {

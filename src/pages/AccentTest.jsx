@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useScores } from '../hooks/useScores';
+import { startSpeechRecognition } from '../lib/speech';
+import { analyzePronunciation } from '../lib/ai';
 
 const paragraphs = [
   "The quick brown fox jumps over the lazy dog. She sells seashells by the seashore. Peter Piper picked a peck of pickled peppers.",
@@ -10,31 +12,14 @@ const paragraphs = [
   "Six sleek swans swam swiftly southwards. Fred fed Ted bread and Ted fed Fred bread. A big black bug bit a big black bear and made the big black bear bleed blood.",
 ];
 
-const tips = {
-  low: [
-    "Try reading the text aloud slowly before recording — it helps build muscle memory.",
-    "Focus on enunciating each syllable clearly rather than speaking quickly.",
-    "Pay attention to word endings, especially consonant clusters like 'sts' and 'ths'.",
-  ],
-  mid: [
-    "Good progress! Work on connecting words more smoothly for natural flow.",
-    "Practice tongue twisters daily to improve articulation speed.",
-    "Record yourself and listen back — you'll catch patterns you miss in real-time.",
-  ],
-  high: [
-    "Excellent pronunciation! Focus on intonation patterns for even more natural delivery.",
-    "Try varying your pace — slightly slower for complex words, natural speed for simple ones.",
-    "You're performing at an advanced level. Consider practicing with more complex passages.",
-  ],
-};
-
 export default function AccentTest() {
   const [phase, setPhase] = useState('ready'); // ready, recording, processing, result
   const [paragraph, setParagraph] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [accuracy, setAccuracy] = useState(0);
-  const [currentTips, setCurrentTips] = useState([]);
+  const [aiFeedback, setAiFeedback] = useState('');
+  const [mispronouncedWords, setMispronouncedWords] = useState([]);
   const [waveformBars, setWaveformBars] = useState(Array(20).fill(8));
   const [error, setError] = useState('');
 
@@ -46,26 +31,6 @@ export default function AccentTest() {
     const p = paragraphs[Math.floor(Math.random() * paragraphs.length)];
     setParagraph(p);
     return p;
-  }, []);
-
-  const calculateAccuracy = useCallback((spoken, original) => {
-    const spokenWords = spoken.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean);
-    const originalWords = original.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean);
-
-    if (originalWords.length === 0) return 0;
-
-    let matches = 0;
-    const originalSet = [...originalWords];
-
-    spokenWords.forEach(word => {
-      const idx = originalSet.indexOf(word);
-      if (idx !== -1) {
-        matches++;
-        originalSet.splice(idx, 1);
-      }
-    });
-
-    return Math.round((matches / originalWords.length) * 100);
   }, []);
 
   const animateWaveform = useCallback(() => {
@@ -86,68 +51,51 @@ export default function AccentTest() {
   const startRecording = useCallback(() => {
     setError('');
     setTranscript('');
+    setAiFeedback('');
+    setMispronouncedWords([]);
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setError('Speech Recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
-      return;
-    }
+    const recognition = startSpeechRecognition(
+      // onResult
+      (text) => {
+        setTranscript(text);
+      },
+      // onError
+      (errMsg) => {
+        setError(errMsg);
+        setIsRecording(false);
+        stopWaveform();
+      },
+      // onEnd
+      async (finalTranscript) => {
+        setIsRecording(false);
+        stopWaveform();
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    let finalTranscript = '';
-
-    recognition.onresult = (event) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript + ' ';
+        if (finalTranscript.trim()) {
+          setPhase('processing');
+          try {
+            const aiResult = await analyzePronunciation(paragraph, finalTranscript);
+            setAccuracy(aiResult.accuracy);
+            setAiFeedback(aiResult.feedback);
+            setMispronouncedWords(aiResult.mispronouncedWords || []);
+            updateScore('accent', { accuracy: Math.max(aiResult.accuracy, 0) });
+            setPhase('result');
+          } catch (err) {
+            setError(err.message);
+            setPhase('ready');
+          }
         } else {
-          interim += event.results[i][0].transcript;
+          setPhase('ready');
         }
       }
-      setTranscript(finalTranscript + interim);
-    };
+    );
 
-    recognition.onerror = (event) => {
-      if (event.error !== 'no-speech') {
-        setError(`Speech recognition error: ${event.error}`);
-      }
-      setIsRecording(false);
-      stopWaveform();
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-      stopWaveform();
-
-      if (finalTranscript.trim()) {
-        setPhase('processing');
-        setTimeout(() => {
-          const acc = calculateAccuracy(finalTranscript, paragraph);
-          setAccuracy(acc);
-
-          let tipSet;
-          if (acc >= 80) tipSet = tips.high;
-          else if (acc >= 50) tipSet = tips.mid;
-          else tipSet = tips.low;
-          setCurrentTips(tipSet);
-
-          updateScore('accent', { accuracy: Math.max(acc, 0) });
-          setPhase('result');
-        }, 1500);
-      }
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsRecording(true);
-    setPhase('recording');
-    animateWaveform();
-  }, [paragraph, calculateAccuracy, updateScore, animateWaveform, stopWaveform]);
+    if (recognition) {
+      recognitionRef.current = recognition;
+      setIsRecording(true);
+      setPhase('recording');
+      animateWaveform();
+    }
+  }, [paragraph, updateScore, animateWaveform, stopWaveform]);
 
   const stopRecording = useCallback(() => {
     if (recognitionRef.current) {
@@ -306,26 +254,46 @@ export default function AccentTest() {
               </div>
             </div>
 
-            {/* Tips */}
+            {/* AI Feedback */}
             <div className="glass-card-static" style={{ padding: 32, marginBottom: 24 }}>
               <h3 className="text-headline-md" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>tips_and_updates</span>
-                Improvement Tips
+                <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontVariationSettings: "'FILL' 1" }}>psychology</span>
+                AI Pronunciation Coach
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {currentTips.map((tip, i) => (
-                  <div key={i} style={{
-                    padding: 16,
-                    background: 'var(--surface-container)',
-                    borderRadius: 'var(--radius-xl)',
-                    borderLeft: '3px solid var(--primary)',
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                  }}>
-                    {tip}
-                  </div>
-                ))}
+              
+              <div style={{
+                padding: 16,
+                background: 'var(--surface-container-low)',
+                borderRadius: 'var(--radius-xl)',
+                borderLeft: '3px solid var(--primary)',
+                fontSize: 16,
+                lineHeight: 1.6,
+                marginBottom: 24,
+                color: 'var(--on-surface)'
+              }}>
+                "{aiFeedback}"
               </div>
+
+              {mispronouncedWords.length > 0 && (
+                <div>
+                  <div className="text-label-caps" style={{ color: 'var(--error)', marginBottom: 12 }}>Words to Practice:</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {mispronouncedWords.map((word, i) => (
+                      <span key={i} style={{
+                        padding: '6px 12px',
+                        background: 'rgba(255, 180, 171, 0.1)',
+                        border: '1px solid rgba(255, 180, 171, 0.3)',
+                        borderRadius: 'var(--radius-full)',
+                        color: 'var(--error)',
+                        fontSize: 14,
+                        fontWeight: 600
+                      }}>
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ textAlign: 'center' }}>
