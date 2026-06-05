@@ -1,5 +1,5 @@
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-const MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+const MODEL = "meta-llama/llama-3.2-3b-instruct:free";
 
 export async function analyzePronunciation(targetText, spokenText) {
   if (!OPENROUTER_API_KEY) {
