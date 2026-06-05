@@ -12,19 +12,15 @@ export function startSpeechRecognition(onResult, onError, onEnd) {
   recognition.interimResults = true;
   recognition.lang = 'en-US';
 
-  let finalTranscript = '';
+  let currentTranscript = '';
 
   recognition.onresult = (event) => {
-    let interimTranscript = '';
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript + ' ';
-      } else {
-        interimTranscript += event.results[i][0].transcript;
-      }
+    let text = '';
+    for (let i = 0; i < event.results.length; ++i) {
+      text += event.results[i][0].transcript;
     }
-    // Pass both final and interim to the callback so the UI feels responsive
-    onResult((finalTranscript + interimTranscript).trim());
+    currentTranscript = text;
+    onResult(currentTranscript.trim());
   };
 
   recognition.onerror = (event) => {
@@ -35,7 +31,7 @@ export function startSpeechRecognition(onResult, onError, onEnd) {
   };
 
   recognition.onend = () => {
-    onEnd(finalTranscript.trim());
+    onEnd(currentTranscript.trim());
   };
 
   try {
