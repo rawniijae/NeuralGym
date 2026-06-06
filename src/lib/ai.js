@@ -107,3 +107,56 @@ Return your analysis strictly as a JSON object with this exact structure, and no
   // If ALL models failed, throw the final error
   throw new Error(`All free AI models are currently busy. Try again in 30 seconds!`);
 }
+
+export async function generatePersonalityAnalysis(type, questionsAndAnswers) {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error("OpenRouter API key is missing. Add it to .env.local!");
+  }
+
+  const prompt = `
+You are an expert, highly empathetic personality psychologist. I just took an MBTI-style personality test.
+Based on the test, my calculated personality type is: ${type}.
+
+Here are the specific questions I answered, and how strongly I agreed or disagreed with them (Scale: 2=Strongly Agree, 1=Agree, 0=Neutral, -1=Disagree, -2=Strongly Disagree):
+${questionsAndAnswers.map(qa => `- "${qa.question}": ${qa.answer}`).join('\n')}
+
+Your job is to provide a comprehensive, personalized 3-4 paragraph psychological analysis of my personality. 
+Do not just give generic ${type} traits. Specifically reference some of the key things I strongly agreed or disagreed with to explain WHY I am this way. 
+Be insightful, warm, and highlight how my specific traits interact with the world. Focus on the nuances.
+
+Return your analysis as plain text paragraphs. Do not use complex markdown, just return the raw text.
+`;
+
+  let lastError = null;
+
+  for (const model of MODELS) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.href,
+          "X-Title": "NeuralGym"
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`API Error: ${response.status} - ${errText}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
+    } catch (err) {
+      console.warn(`Model ${model} failed:`, err.message);
+      lastError = err;
+    }
+  }
+
+  throw new Error(`All free AI models are currently busy. Try again in 30 seconds!`);
+}

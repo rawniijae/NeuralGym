@@ -11,6 +11,7 @@ const defaultScores = {
   accent: { accuracy: 0 },
   reaction: { avgTime: 0 },
   stroop: { accuracy: 0, avgTime: 0 },
+  personality: {},
 };
 
 function getStoredScores() {

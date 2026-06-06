@@ -157,7 +157,7 @@ export default function TypingTest() {
             <button
               key={d}
               className={`difficulty-btn ${device === d ? 'active' : ''}`}
-              onClick={() => { setDevice(d); if (phase !== 'typing') setPhase('ready'); }}
+              onClick={() => { setDevice(d); setPhase('ready'); }}
               style={{ padding: '8px 24px' }}
             >
               {d.charAt(0).toUpperCase() + d.slice(1)} Mode
@@ -171,7 +171,7 @@ export default function TypingTest() {
             <button
               key={d}
               className={`difficulty-btn ${difficulty === d ? 'active' : ''}`}
-              onClick={() => { setDifficulty(d); if (phase !== 'typing') setPhase('ready'); }}
+              onClick={() => { setDifficulty(d); setPhase('ready'); }}
             >
               {d.charAt(0).toUpperCase() + d.slice(1)}
             </button>

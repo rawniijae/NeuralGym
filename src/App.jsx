@@ -8,6 +8,7 @@ import AccentTest from './pages/AccentTest';
 import ReactionTest from './pages/ReactionTest';
 import StroopTest from './pages/StroopTest';
 import Auth from './pages/Auth';
+import PersonalityTest from './pages/PersonalityTest';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/accent" element={<AccentTest />} />
             <Route path="/reaction" element={<ReactionTest />} />
             <Route path="/focus" element={<StroopTest />} />
+            <Route path="/personality" element={<PersonalityTest />} />
           </Routes>
         </div>
       </BrowserRouter>

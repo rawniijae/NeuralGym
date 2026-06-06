@@ -57,6 +57,17 @@ const modules = [
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDSpra5HVjlrl_gmrYi5cMnKQfowazJ_l8uilew-2A2wC7L4Vhdbqf5crdHkhX69I8rLM8cyL6i9OIRts4_G6_v0zJqmLhP1j8XqYqwwYRHMaOV1AIltiaWgqswvMGNVAGqTHEdrlLDV8pjf6UQ69NvOvv1m4vBKetEh9oNGto0rxGMDFZIsLBNqwJc7-uo8peXcJZtQC9mrxyn7KQtDjtCZ-3VcqNlbMhuJWg6vvdY_KCUn_tiTWHaFdDXqlnyKIL0JQ-HWMnowCo',
     getStat: (s) => `FOCUS: ${s.stroop?.accuracy || 0}/100`,
   },
+  {
+    id: 'personality',
+    title: 'Personality Analysis',
+    description: 'Discover your MBTI type. Answer a series of questions to reveal your personality traits, strengths, and potential blind spots.',
+    icon: 'psychology',
+    category: 'Analysis',
+    categoryColor: 'var(--tertiary)',
+    path: '/personality',
+    image: 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=600&auto=format&fit=crop',
+    getStat: (s) => s.personality?.type ? `TYPE: ${s.personality.type}` : 'UNTRAINED',
+  },
 ];
 
 export default function Dashboard() {
